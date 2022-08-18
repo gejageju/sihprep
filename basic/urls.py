@@ -9,6 +9,9 @@ urlpatterns = [
     path('rejectQuestion',views.RejectQuestion.as_view()),
     path('getNotifications',views.getNotifications.as_view()),
     #path('createUser',views.CreateUser.as_view()),
+    path('applications',views.applicationList.as_view()),
     path('printdata',views.printdata.as_view()),
+    path('onetap',views.onetapsignin.as_view()),
+    path('getquesbysubj',views.getQuesBySubj.as_view()),
     path('',views.index)
 ]

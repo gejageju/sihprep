@@ -8,7 +8,8 @@ from django.conf import settings
 
 # Create your models here.
 class UserProfile(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.IntegerField()
+    email=models.CharField(max_length=255,primary_key=True)
     favourites = ArrayField(models.CharField(max_length=200),default=list)
     isAdmin = models.BooleanField(default=False)
     isVerifier = models.BooleanField(default=False)
@@ -59,3 +60,5 @@ class applications(models.Model):
     marks_degree = models.DecimalField(max_digits=4,decimal_places=2)
     is_teacher = models.BooleanField()
     experience = models.IntegerField()
+
+
