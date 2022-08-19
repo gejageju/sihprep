@@ -10,7 +10,7 @@ from django.conf import settings
 class UserProfile(models.Model):
     id = models.IntegerField()
     email=models.CharField(max_length=255,primary_key=True)
-    favourites = ArrayField(models.CharField(max_length=200),default=list)
+    favourites = ArrayField(models.IntegerField(),default=list)
     isAdmin = models.BooleanField(default=False)
     isVerifier = models.BooleanField(default=False)
 
@@ -24,7 +24,7 @@ class Verifier(models.Model):
 class Question(models.Model):
     question=models.TextField()
     options=ArrayField(models.CharField(max_length=75))
-    uploadedBy=models.CharField(max_length=30) #userid
+    uploadedBy=models.CharField(max_length=30,blank=True) #userid
     verifiedBy= models.CharField(max_length=30)
     answer=models.CharField(max_length=75)
     Class = models.CharField(max_length=20)
@@ -47,8 +47,9 @@ class Question(models.Model):
     #when creating user instance , create notification instance too
     #send only notif count to home[age]
 class Notifications(models.Model):
-    userId= models.CharField(max_length=30)
+    useremail= models.CharField(max_length=30)
     isSeen = models.BooleanField(default=False)
+    quesid=models.IntegerField()
     msg = models.TextField()
 
 class applications(models.Model):
@@ -60,5 +61,5 @@ class applications(models.Model):
     marks_degree = models.DecimalField(max_digits=4,decimal_places=2)
     is_teacher = models.BooleanField()
     experience = models.IntegerField()
-
+    email = models.CharField(max_length=255)
 

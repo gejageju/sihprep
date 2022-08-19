@@ -1,5 +1,6 @@
 from array import array
 from ast import Delete
+from asyncio.windows_events import NULL
 from urllib import response
 from django.shortcuts import render
 from .models import  Notifications, Question,applications,UserProfile
@@ -17,8 +18,10 @@ from django.contrib.auth import login,authenticate
 # Create your views here.
 
 def index(request):
-    User.objects.all().delete()
+    """ User.objects.all().delete()
     UserProfile.objects.all().delete()
+    Question.objects.all().delete()
+    Notifications.objects.all().delete() """
     return  render(request,'index.html')
 
 
@@ -33,14 +36,6 @@ class CreateQuestionview(APIView):
         serializer.save()
         return Response(status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-"""class CreateUserProfile(APIView):
-    def post(self,request):
-        serializer = UserProfileSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)"""
 
 
 class FetchRecentQuestions(generics.ListAPIView):
@@ -57,11 +52,15 @@ class VerifyQuestion(APIView):
       obj.isVerified=True
       obj.verifiedBy = request.data["verifierId"]
       obj.save()
-      userId= obj.uploadedBy
-      notifobj= Notifications()
-      notifobj.userId=userId
-      notifobj.msg="Your question has been verified!"
-      notifobj.save()
+      useremail= obj.uploadedBy
+      print(type(useremail))
+      print(useremail)
+      if useremail != "":
+        notifobj= Notifications()
+        notifobj.useremail=useremail
+        notifobj.quesid=id
+        notifobj.msg="Your question has been verified!"
+        notifobj.save() 
       return Response(status=status.HTTP_201_CREATED)
 
 class RejectQuestion(APIView):
@@ -70,24 +69,22 @@ class RejectQuestion(APIView):
         id=request.data["questionId"]
         Question.objects.all().filter(id=id).delete()
 
-class getNotifications(APIView):
-    def post(self,request):
-        userId=request.data["userId"]
-        notifobjs= Notifications.objects.filter(userId=userId,isSeen=False)
-        count= notifobjs.count()
-        notif=[] 
-        for obj in notifobjs:
-            notif.append(obj.msg)
-            obj.isSeen=True
-            obj.save()
-        return JsonResponse({"notifications" : notif })
+class getNotifications(APIView): #has to be tested !!!important!!!!
+    def get(self,request):
+        email=request.query_params["email"] ### change this to request.user 
+        notifobjs= Notifications.objects.filter(useremail=email,isSeen=False).values()
+        notifobjs=list(notifobjs)
+        print(notifobjs)
+        count= len(notifobjs)
+        #return Response(status=status.HTTP_200_OK)
+        return JsonResponse({"notifications" : notifobjs,"count": count})
 
-class printdata(APIView):
+class printdata(APIView): #tested
     def post(self,request):
         print(request.data)
         return Response(request.data)
 
-class onetapsignin(APIView):
+class onetapsignin(APIView): #tested
     def post(self,request):
             email=request.data["email"]
             try:
@@ -103,7 +100,7 @@ class onetapsignin(APIView):
                 userobj.save()
                 user=User.objects.get(username=email)
                 userid=user.id
-                userProf=UserProfile(id=userid)
+                userProf=UserProfile(id=userid,email=email)
                 userProf.save()
             user = User.objects.get(username=email)
             userid=user.id
@@ -112,7 +109,7 @@ class onetapsignin(APIView):
             login(request, user)
             print(request.user)
                 
-            return Response({"id": userprofobj.id, "isVerifier" : userprofobj.isVerifier})
+            return Response({"id": userprofobj.id, "isVerifier" : userprofobj.isVerifier, "isAdmin" : userprofobj.isAdmin})
 
 
 
@@ -132,11 +129,72 @@ class applicationList(APIView):
             return Response(status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class getQuesBySubj(APIView):
+class getQuesBySubj(APIView): #has to be tested
     def get(self,request):
         subj=request.query_params["subject"]
-        objs=Question.objects.filter(subject__contains=[subj])
+        objs=Question.objects.filter(subject__contains=[subj],isVerified=True)
         for obj in objs:
             print(obj.question)
         return Response(status=status.HTTP_200_OK)
+
+class addToFav(APIView): #tested
+    def post(self,request):
+        email=request.data["email"]
+        print(email)
+        print(type(email)) ##change this to request.user
+        quesId=request.data["quesId"]
+        userprofobjs=UserProfile.objects.get(email=email)
+        #userprofobjs=userprofobjs[0]
+        print(userprofobjs)
+        userprofobjs.favourites.append(quesId)
+        print(userprofobjs.favourites)
+        userprofobjs.save()
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+class removeFromFav(APIView): #tested
+    def post(self,request):
+        email=request.data["email"] ##change this to request.user
+        quesId=request.data["quesId"]
+        userprofobjs=UserProfile.objects.filter(email=email)
+        userprofobjs=userprofobjs[0]
+        userprofobjs.favourites.remove(quesId)
+        userprofobjs.save()
+        return Response(status=status.HTTP_200_OK)
+class getFavs(APIView): #tested
+    def get(self,request): ##get necessary fields from fe team9
+        email=request.query_params["email"] ##change this to request.user
+        userprofobjs=UserProfile.objects.filter(email=email)
+        userprofobjs=userprofobjs[0]
+        print(userprofobjs.favourites)
+        favList=userprofobjs.favourites
+        data=[]
+        for fav in favList:
+            quesobj=Question.objects.get(id=fav)
+            obj={"question": quesobj.question,
+                  "options": quesobj.options,
+                  "answer" : quesobj.answer  }
+            data.append(obj)
+        print(data)
+        return JsonResponse({"data" : data},safe=False)
+
+class verifyApplications(APIView):
+    def post(self,request):
+        pass
+class getQuesByMe(APIView):
+    def get(self,request):
+        userEmail = request.query_params["email"]
+        questionObjects = Question.objects.filter(uploadedBy = userEmail)
+        return JsonResponse(questionObjects)
+
+class quesVerifiedByMe(APIView):
+    def get(self,request):
+        userEmail = request.query_params["email"]
+        userObj = User.objects.filter(email = userEmail)
+        amIVerified = userObj.isVerifier
+        if amIVerified:
+            print("as")
+            listOfVerifiedQues = Question.objects.filter(verifiedBy = userEmail)
+            return JsonResponse(listOfVerifiedQues)
+        else:
+            print("not a verifier")
 

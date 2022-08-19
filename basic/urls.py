@@ -12,6 +12,10 @@ urlpatterns = [
     path('applications',views.applicationList.as_view()),
     path('printdata',views.printdata.as_view()),
     path('onetap',views.onetapsignin.as_view()),
+    path('addToFav',views.addToFav.as_view()),
+    path('removeFromFav',views.removeFromFav.as_view()),
+    path('getFav',views.getFavs.as_view()),
     path('getquesbysubj',views.getQuesBySubj.as_view()),
+    path('quesByMe',views.getQuesByMe.as_view()),
     path('',views.index)
 ]
