@@ -15,7 +15,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class applicationSerializers(serializers.ModelSerializer):
     class Meta:
         model = applications
-        fields = '_all_'
+        fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

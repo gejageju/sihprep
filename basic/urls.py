@@ -17,5 +17,6 @@ urlpatterns = [
     path('getFav',views.getFavs.as_view()),
     path('getquesbysubj',views.getQuesBySubj.as_view()),
     path('quesByMe',views.getQuesByMe.as_view()),
+    path('checkemail',views.checkemail.as_view()),
     path('',views.index)
 ]
