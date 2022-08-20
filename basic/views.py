@@ -2,6 +2,7 @@ from array import array
 from ast import Delete
 from asyncio.windows_events import NULL
 from urllib import response
+import requests
 from django.shortcuts import render
 from .models import  Notifications, Question,applications,UserProfile,Verifier
 from rest_framework import generics,status
@@ -16,6 +17,11 @@ User = get_user_model()
 from django.conf import settings
 from django.contrib.auth import login,authenticate
 import datetime
+import random
+import string
+
+from django.conf import settings
+from django.core.mail import send_mail
 # Create your views here.
 
 def index(request):
@@ -31,11 +37,15 @@ class CreateQuestionview(APIView): #tested
   
   def post(self,request):
     #temp=request.data
-    print(request.data)
+
     serializer = QuestionSerializer(data=request.data)
-    print(request.data)
+    
+    #request.data["encodedValue"]="test"
+    #x=requests.post('http://172.18.80.5:8000/api/test',data={'ques': request.data["question"]})
+    #print(x)
     if serializer.is_valid():
         serializer.save()
+        print(serializer.data)
         return Response(status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -46,10 +56,10 @@ class FetchRecentQuestions(APIView): #recent
         queryset=queryset.order_by('-createdAt')[:10]
         loggedin=request.query_params["loggedin"]
         
-        if loggedin == False:
+        if loggedin == "False":
             queryset=list(queryset.values())
-            return  JsonResponse(queryset,safe=False)
-        if loggedin == True: 
+            return  JsonResponse({"data" : queryset},safe=False)
+        if loggedin == "True": 
             email=request.query_params["email"]
             profobj=UserProfile.objects.get(email=email)
             favList=profobj.favourites
@@ -277,4 +287,14 @@ class checkemail(APIView): #tested
         return JsonResponse({"exists" : flag},safe = False)
 
 
-
+class getcode(APIView):
+    def post(self,request):
+        email=request.data["email"] 
+        code=''.join(random.choices(string.ascii_uppercase,k=6))  
+        print(code)    
+        subject = 'Quest!onMark'
+        message ='Your verification code is '+code
+        email_from = settings.EMAIL_HOST_USER
+        recipient_list = [email, ]
+        #send_mail( subject, message, email_from, recipient_list )
+        return Response({'code': code})

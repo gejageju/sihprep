@@ -20,5 +20,6 @@ urlpatterns = [
     path('checkemail',views.checkemail.as_view()),
     path('verifyApplications',views.verifyApplications.as_view()),
     path('quesStatus',views.quesStatus.as_view()),
+    path('getcode',views.getcode.as_view()),
     path('',views.index)
 ]
