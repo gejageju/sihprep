@@ -8,7 +8,7 @@ from rest_framework import generics,status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse,FileResponse
 from .serializers import QuestionSerializer,UserProfileSerializer,applicationSerializers
 from django.contrib.auth import get_user_model
 from django.db.models.base import ObjectDoesNotExist
@@ -22,7 +22,8 @@ def index(request):
     """ User.objects.all().delete()
     UserProfile.objects.all().delete()
     Question.objects.all().delete()
-    Notifications.objects.all().delete() """
+    Notifications.objects.all().delete()"""
+    applications.objects.all().delete() 
     return  render(request,'index.html')
 
 
@@ -39,12 +40,59 @@ class CreateQuestionview(APIView): #tested
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class FetchRecentQuestions(generics.ListAPIView): #recent
+class FetchRecentQuestions(APIView): #recent
+  def get(self,request):
+        queryset=Question.objects.all().filter(isVerified=True)
+        queryset=queryset.order_by('-createdAt')[:10]
+        loggedin=request.query_params["loggedin"]
+        
+        if loggedin == False:
+            queryset=list(queryset.values())
+            return  JsonResponse(queryset,safe=False)
+        if loggedin == True: 
+            email=request.query_params["email"]
+            profobj=UserProfile.objects.get(email=email)
+            favList=profobj.favourites
+            data=[]
+            for obj in queryset:
+                fav=False
+                if obj.id in favList:
+                    fav=True
+                temp = { "question" : obj.question,
+                        "options" : obj.options,
+                        "answer" : obj.answer,
+                        "difficulty" : obj.difficulty,
+                        "subject" : obj.subject,
+                        "tags" : obj.tags,
+                        "isFav" : fav}
+                data.append(temp)
+            return JsonResponse({"data" : data},safe=False)
+        
 
-    queryset=Question.objects.all().filter(isVerified=True)
-    queryset=queryset.order_by('-createdAt')[:10]
-    serializer_class = QuestionSerializer
 
+
+class quesStatus(APIView):
+    def get(self,request):
+        quesId = request.query_params["id"]
+        quesObj = Question.objects.get(id = quesId)
+        isVerified = quesObj.isVerified
+        #question = list(Question.objects.filter(id = quesId).values())
+        if isVerified:
+            data = []
+            obj = {
+                "isVerified" : quesObj.isVerified,
+                "VerifiedBY" : quesObj.verifiedBy,
+                "VerifiedOn" : quesObj.verifiedOn,
+            }
+            data.append(obj)
+            return JsonResponse({"data" : data},safe = False)
+        else:
+            data = []
+            obj = {
+                "isVerfied" : quesObj.isVerified,
+            }
+            data.append(obj)
+            return JsonResponse({"data" : data},safe = False)
 class VerifyQuestion(APIView):
 #add verifeied on---done
 #send email
@@ -85,8 +133,8 @@ class getNotifications(APIView): #has to be tested !!!important!!!!
 
 class printdata(APIView): #tested
     def post(self,request):
-        print(request.data)
-        return Response(request.data)
+        #print(request.FILES)
+        return FileResponse(request.FILES)
 
 class onetapsignin(APIView): #tested
     def post(self,request):
@@ -133,7 +181,7 @@ class applicationList(APIView):
             return Response(status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class getQuesBySubj(APIView): #tested
+class getQuesBySubj(APIView): #tested----do this
     def get(self,request):
         subj=request.query_params["subject"]
         objs=Question.objects.filter(subject__contains=[subj],isVerified=True)
@@ -189,13 +237,14 @@ class verifyApplications(APIView): #needs to be tested
     #send email
     def post(self,request):
         id=request.data["applicationId"]
-        applications=applications.objects.get(id=id)
-        email=applications.email
+        appobj=applications.objects.get(id=id)
+        email=appobj.email
+        print(email)
         userprofobj=UserProfile.objects.get(email=email)
         userprofobj.isVerifier=True
         userprofobj.save()
-        expertise=applications.expertise
-        verifobj = Verifier(expertise=expertise)
+        expertise=appobj.expertise
+        verifobj = Verifier(expertise=expertise,email=email)
         verifobj.save()
         notifobj= Notifications(useremail=email,msg="Your application has been accepted",verifynotif=True)
         notifobj.save()

@@ -16,7 +16,7 @@ class UserProfile(models.Model):
 
     
 class Verifier(models.Model):
-    id = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,primary_key=True)
+    email=models.CharField(max_length=255)
     questionsVerified =ArrayField(models.IntegerField(),default=list)
     expertise = models.TextField()
 
@@ -51,7 +51,7 @@ class Question(models.Model):
 class Notifications(models.Model):
     useremail= models.CharField(max_length=30)
     isSeen = models.BooleanField(default=False)
-    quesid=models.IntegerField()
+    quesid=models.IntegerField(blank=True,null=True)
     msg = models.TextField()
     verifynotif=models.BooleanField(default=False)
     createdAt=models.DateTimeField(auto_now_add=True)

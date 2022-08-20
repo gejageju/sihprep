@@ -18,5 +18,7 @@ urlpatterns = [
     path('getquesbysubj',views.getQuesBySubj.as_view()),
     path('quesByMe',views.getQuesByMe.as_view()),
     path('checkemail',views.checkemail.as_view()),
+    path('verifyApplications',views.verifyApplications.as_view()),
+    path('quesStatus',views.quesStatus.as_view()),
     path('',views.index)
 ]
