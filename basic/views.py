@@ -298,3 +298,19 @@ class getcode(APIView):
         recipient_list = [email, ]
         #send_mail( subject, message, email_from, recipient_list )
         return Response({'code': code})
+
+
+#bulk upload
+#automatic ---- no.of questions subject , class, difficulty=+/- 1, Colevel
+#handle test and scores in db
+# questions to be verified shuffle
+#mark as misleading
+#previously downloaded quespaper
+
+class getQuestionsToBeVerified(APIView):
+   def get( self,request):
+    quesobjs=Question.objects.filter(isVerified=False)
+    quesobjs=quesobjs.filter(isVerified=False).order_by('?')[:10]
+    quesobjs=quesobjs.values()
+    querylist=list(quesobjs)
+    return JsonResponse({"data" : querylist},safe=False)
