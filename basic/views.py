@@ -15,41 +15,45 @@ from django.contrib.auth import get_user_model
 from django.db.models.base import ObjectDoesNotExist
 User = get_user_model()
 from django.conf import settings
+import numpy 
 from django.contrib.auth import login,authenticate
 import datetime
 import random
 import string
 
+from sentence_transformers import SentenceTransformer
 from django.conf import settings
 from django.core.mail import send_mail
 # Create your views here.
 
+model = SentenceTransformer('nli-distilroberta-base-v2')
+
+
 def index(request):
-    """ User.objects.all().delete()
-    UserProfile.objects.all().delete()
-    Question.objects.all().delete()
-    Notifications.objects.all().delete()"""
-    applications.objects.all().delete() 
+
     return  render(request,'index.html')
 
 
 class CreateQuestionview(APIView): #tested
   
   def post(self,request):
-    #temp=request.data
-
-    serializer = QuestionSerializer(data=request.data)
     
-    #request.data["encodedValue"]="test"
-    #x=requests.post('http://172.18.80.5:8000/api/test',data={'ques': request.data["question"]})
-    #print(x)
-    if serializer.is_valid():
-        serializer.save()
-        print(serializer.data)
-        return Response(status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+        question=request.data["question"]
+        options= request.data["options"]
+        answer= request.data["answer"]
+        Class = request.data["Class"]
+        subject= request.data["subject"]
+        tags=request.data["tags"]
+        difficulty=request.data["difficulty"]
+        explanation = request.data["explanation"]
+        COLevel = request.data["COLevel"]
+        quesobj=Question(question=question,options=options,answer=answer,Class=Class,subject=subject,tags=tags,difficulty=difficulty,explanation=explanation,COLevel=COLevel)
+        quesobj.save()
+        quesobj.encodedValue=model.encode(quesobj.question)
+        print(quesobj.encodedValue)
+        print((quesobj.encodedValue.shape))
+        quesobj.save()
+        return Response(status=status.HTTP_200_OK)
 class FetchRecentQuestions(APIView): #recent
   def get(self,request):
         queryset=Question.objects.all().filter(isVerified=True)
@@ -78,9 +82,6 @@ class FetchRecentQuestions(APIView): #recent
                 data.append(temp)
             return JsonResponse({"data" : data},safe=False)
         
-
-
-
 class quesStatus(APIView):
     def get(self,request):
         quesId = request.query_params["id"]
@@ -110,20 +111,24 @@ class VerifyQuestion(APIView):
     def post(self,request):
       id=request.data["questionId"]
       obj=Question.objects.get(id=id)
-      obj.isVerified=True
-      obj.verifiedBy = request.data["verifierId"]
-      obj.verifiedOn=datetime.datetime.now()
-      obj.save()
-      useremail= obj.uploadedBy
-      print(type(useremail))
-      print(useremail)
-      if useremail != "":
-        notifobj= Notifications()
-        notifobj.useremail=useremail
-        notifobj.quesid=id
-        notifobj.msg="Your question has been verified!"
-        notifobj.save() 
-      return Response(status=status.HTTP_201_CREATED)
+      if obj.isVerified==False:
+        obj.isVerified=True
+        obj.verifiedBy = request.data["verifierId"]
+        obj.verifiedOn=datetime.datetime.now()
+        obj.save()
+        useremail= obj.uploadedBy
+        print(type(useremail))
+        print(useremail)
+        if useremail != "":
+            notifobj= Notifications()
+            notifobj.useremail=useremail
+            notifobj.quesid=id
+            notifobj.msg="Your question has been verified!"
+            notifobj.save() 
+        return Response(status=status.HTTP_201_CREATED)
+      else:
+        print("Already verified")
+        return Response(status=status.HTTP_200_OK)
 
 class RejectQuestion(APIView):
 
@@ -296,7 +301,7 @@ class getcode(APIView):
         message ='Your verification code is '+code
         email_from = settings.EMAIL_HOST_USER
         recipient_list = [email, ]
-        #send_mail( subject, message, email_from, recipient_list )
+        send_mail( subject, message, email_from, recipient_list )
         return Response({'code': code})
 
 
@@ -314,3 +319,23 @@ class getQuestionsToBeVerified(APIView):
     quesobjs=quesobjs.values()
     querylist=list(quesobjs)
     return JsonResponse({"data" : querylist},safe=False)
+
+class Createuser(APIView):
+    def post(self,request):
+        email= request.data["email"]
+        first_name = request.data["first_name"]
+        last_name=request.data["last_name"]
+        password = request.data["password"]
+        user= User.objects.create_user(username=email,
+                                 email=email,
+                                 first_name=first_name,
+                                 last_name=last_name,
+                                 password=password)
+        
+        user=User.objects.get(username=email)
+        userid=user.id
+        userProf=UserProfile(id=userid,email=email)
+        userProf.save()
+        login(request, user)
+        print(request.user)
+        return Response(status=status.HTTP_201_CREATED)

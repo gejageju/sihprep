@@ -2,11 +2,15 @@ from attr import field
 from rest_framework import serializers
 from .models import Question, UserProfile,applications
 from django.contrib.auth.models import User
+from sentence_transformers import SentenceTransformer
+
+
 
 class QuestionSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Question
-        fields=('question','options','uploadedBy','answer','Class','subject','tags','difficulty','encodedValue','explanation','COLevel')
+        fields=('question','options','uploadedBy','encodedValue','answer','Class','subject','tags','difficulty','explanation','COLevel')
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:

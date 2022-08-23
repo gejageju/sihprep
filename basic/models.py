@@ -4,6 +4,9 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.models import User
 from django.conf import settings
+import numpy as np
+from ndarraydjango.fields import NDArrayField
+
 #User = get_user_model()
 DATE_INPUT_FORMATS = ['%d-%m-%Y'] ### add this to application
 # Create your models here.
@@ -24,15 +27,15 @@ class Verifier(models.Model):
 class Question(models.Model):
     question=models.TextField()
     options=ArrayField(models.CharField(max_length=75))
-    uploadedBy=models.CharField(max_length=30,blank=True) #userid
-    verifiedBy= models.CharField(max_length=30)
+    uploadedBy=models.CharField(max_length=30,blank=True,null=True) #userid
+    verifiedBy= models.CharField(max_length=30,blank=True,null=True)
     answer=models.CharField(max_length=75)
     Class = models.CharField(max_length=20)
     isRendered = models.BooleanField(default=False)
     isRenderedat = models.DateTimeField(blank=True, null=True)
     isVerified = models.BooleanField(default=False)
     verifiedOn=models.DateTimeField(blank=True,null=True)
-    encodedValue = models.CharField(max_length=30)
+    encodedValue =NDArrayField(shape=(1, 768), dtype=np.float32,blank=True,null=True)
     difficulty = models.IntegerField()
     subject = ArrayField(models.CharField(max_length=30))
     tags = ArrayField(models.CharField(max_length=20))
@@ -40,6 +43,7 @@ class Question(models.Model):
     noOfTimesFaved = models.IntegerField(default=0)
     explanation = models.TextField(default="No explanation")
     COLevel = models.CharField(max_length=50,default="Understand")
+    
     #verifiedOn=models.DateField(auto_now=False,auto_now_add=True)
     #optionlist : done 
     #class : done
