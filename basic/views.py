@@ -20,7 +20,7 @@ from django.contrib.auth import login,authenticate
 import datetime
 import random
 import string
-
+from django.db.models import Q
 from sentence_transformers import SentenceTransformer
 from django.conf import settings
 from django.core.mail import send_mail
@@ -49,10 +49,12 @@ class CreateQuestionview(APIView): #tested
         COLevel = request.data["COLevel"]
         quesobj=Question(question=question,options=options,answer=answer,Class=Class,subject=subject,tags=tags,difficulty=difficulty,explanation=explanation,COLevel=COLevel)
         quesobj.save()
-        quesobj.encodedValue=model.encode(quesobj.question)
-        print(quesobj.encodedValue)
-        print((quesobj.encodedValue.shape))
-        quesobj.save()
+
+        #quesobj.encodedValue=model.encode(quesobj.question)
+        #print(quesobj.encodedValue)
+        #print((quesobj.encodedValue.shape))
+        #quesobj.save()
+        
         return Response(status=status.HTTP_200_OK)
 class FetchRecentQuestions(APIView): #recent
   def get(self,request):
@@ -108,14 +110,15 @@ class VerifyQuestion(APIView):
 #add verifeied on---done
 #send email
 #django testing done
-    def post(self,request):
-      id=request.data["questionId"]
-      obj=Question.objects.get(id=id)
-      if obj.isVerified==False:
+ def post(self,request):
+    id=request.data["questionId"]
+    obj=Question.objects.get(id=id)
+    if obj.isVerified==False:
         obj.isVerified=True
-        obj.verifiedBy = request.data["verifierId"]
+        obj.verifiedBy = request.data["verifier"]
         obj.verifiedOn=datetime.datetime.now()
         obj.save()
+        #return Response(status=status.HTTP_200_OK)
         useremail= obj.uploadedBy
         print(type(useremail))
         print(useremail)
@@ -126,15 +129,16 @@ class VerifyQuestion(APIView):
             notifobj.msg="Your question has been verified!"
             notifobj.save() 
         return Response(status=status.HTTP_201_CREATED)
-      else:
+    else:
         print("Already verified")
-        return Response(status=status.HTTP_200_OK)
+        
 
 class RejectQuestion(APIView):
 
     def post(self,request):
         id=request.data["questionId"]
         Question.objects.all().filter(id=id).delete()
+        return Response(status=status.HTTP_200_OK)
 
 class getNotifications(APIView): #has to be tested !!!important!!!!
     def get(self,request):
@@ -339,3 +343,11 @@ class Createuser(APIView):
         login(request, user)
         print(request.user)
         return Response(status=status.HTTP_201_CREATED)
+
+class test(APIView):
+    def get(self,request):
+        #id=request.data["id"]
+        quesobj= Question.objects.all()
+        quesobj.filter(id=10).delete()
+        print(quesobj)
+        return Response(status=status.HTTP_200_OK)

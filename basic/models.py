@@ -17,13 +17,17 @@ class UserProfile(models.Model):
     isAdmin = models.BooleanField(default=False)
     isVerifier = models.BooleanField(default=False)
 
-    
+
+class encoded(models.Model):
+     encodedValue =NDArrayField(shape=(1, 768), dtype=np.float32,blank=True,null=True)
+
+
 class Verifier(models.Model):
     email=models.CharField(max_length=255)
     questionsVerified =ArrayField(models.IntegerField(),default=list)
     expertise = models.TextField()
 
-#add verifiedon--done in sameer  to
+#add verified-done in sameer  to
 class Question(models.Model):
     question=models.TextField()
     options=ArrayField(models.CharField(max_length=75))
@@ -35,7 +39,7 @@ class Question(models.Model):
     isRenderedat = models.DateTimeField(blank=True, null=True)
     isVerified = models.BooleanField(default=False)
     verifiedOn=models.DateTimeField(blank=True,null=True)
-    encodedValue =NDArrayField(shape=(1, 768), dtype=np.float32,blank=True,null=True)
+    #encodedValue =NDArrayField(shape=(1, 768), dtype=np.float32,blank=True,null=True)
     difficulty = models.IntegerField()
     subject = ArrayField(models.CharField(max_length=30))
     tags = ArrayField(models.CharField(max_length=20))

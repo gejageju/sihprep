@@ -23,5 +23,6 @@ urlpatterns = [
     path('getcode',views.getcode.as_view()),
     path('tobeverified',views.getQuestionsToBeVerified.as_view()),
     path('Createuser',views.Createuser.as_view()),
+    path('test',views.test.as_view()),
     path('',views.index)
 ]
